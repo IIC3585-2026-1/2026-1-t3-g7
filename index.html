@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Sudoku</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: sans-serif;
+            background: #f0f0f0;
+            flex-direction: column;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(9, 50px);
+            grid-template-rows: repeat(9, 50px);
+            border: 3px solid #000;
+            background: #000;
+        }
+        .cell {
+            background: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 20px;
+            cursor: pointer;
+            border: 1px solid #bbb;
+            user-select: none;
+            color: #555;
+        }
+        .cell:hover {
+            background: #e8f0ff;
+        }
+        .cell.right-block {
+            border-right: 3px solid #000;
+        }
+        .cell.bottom-block {
+            border-bottom: 3px solid #000;
+        }
+
+        .buttons {
+            margin: 20px
+        }
+
+        button {
+            height: 60px;
+            width: 150px;
+            font-size: 30px;
+            margin: 10px
+        }
+    </style>
+</head>
+<body>
+    <div id="message"></div>
+    <div class="grid" id="grid"></div>
+    <div class="buttons">
+        <button onclick="solveGrid()">
+            Resolver
+        </button>
+        <button onclick="clearGrid()">
+            Limpiar
+        </button>
+    </div>
+    <script src="sodoku_solver.js"></script>
+    <script>
+        const grid = document.getElementById('grid');
+        for (let i = 0; i < 81; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'cell';
+            cell.id = 'cell' + String(i);
+            cell.textContent = '';
+            const col = i % 9;
+            const row = Math.floor(i / 9);
+            if (col === 2 || col === 5) cell.classList.add('right-block');
+            if (row === 2 || row === 5) cell.classList.add('bottom-block');
+            cell.addEventListener('click', () => pressBlock(i));
+            grid.appendChild(cell);
+        }
+    </script>
+    <script src="script.js"></script>
+</body>
+</html>
