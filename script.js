@@ -7,15 +7,29 @@ window.onload = () => {
   cleanGrid = Module.cwrap('clean_grid', null, []);
 };
 
+/* ── Helpers ── */
+
 function clearAlerta(){
-  document.querySelectorAll(".cell").forEach(cell => cell.classList.remove("alerta"));
+  document.querySelectorAll(".cell").forEach(cell => {
+    cell.classList.remove("alerta", "conflict", "solved");
+  });
+  const wrapper = document.querySelector('.grid-wrapper');
+  if (wrapper) wrapper.classList.remove('shake');
 }
+
+function setMessage(text, type) {
+  const el = document.getElementById("message");
+  el.textContent = text;
+  el.className = type || '';  // 'error' | 'success' | ''
+}
+
+/* ── Cell click ── */
 
 window.pressBlock = function(i){
     clearAlerta();
-    document.getElementById("message").textContent = "";
-    const id = 'cell' + String(i);
-    const cell = document.getElementById(id);
+    setMessage('', '');
+
+    const cell = document.getElementById('cell' + String(i));
     var content = cell.textContent;
 
     if (content == '') {
@@ -28,6 +42,13 @@ window.pressBlock = function(i){
 
     cell.textContent = content;
 
+    // Track user-input cells visually
+    if (content !== '') {
+        cell.classList.add('user-input');
+    } else {
+        cell.classList.remove('user-input');
+    }
+
     if (content == ''){
         content = '0';
     }
@@ -35,26 +56,55 @@ window.pressBlock = function(i){
     setCell(i, parseInt(content));
 };
 
+/* ── Clear ── */
+
 window.clearGrid = function(){
   cleanGrid();
   for (let i = 0; i < 81; i++){
-    let id = 'cell' + String(i);
-    document.getElementById(id).textContent = '';
+    const cell = document.getElementById('cell' + String(i));
+    cell.textContent = '';
+    cell.classList.remove('user-input', 'solved', 'alerta', 'conflict');
   }
-  document.getElementById("message").textContent = "";
+  setMessage('', '');
   clearAlerta();
 }
 
+/* ── Solve ── */
+
 window.solveGrid = function(){
+  clearAlerta();
+  setMessage('', '');
+
+  // Remember which cells the user filled
+  const userCells = new Set();
+  for (let i = 0; i < 81; i++){
+    if (document.getElementById('cell' + String(i)).textContent !== '') {
+      userCells.add(i);
+    }
+  }
+
   console.log("Resolviendo...");
   var solved = solve();
+
   if (solved == 1){
     for (let i = 0; i < 81; i++){
-      let id = 'cell' + String(i);
-      document.getElementById(id).textContent = String(getCell(i));
+      const cell = document.getElementById('cell' + String(i));
+      cell.textContent = String(getCell(i));
+      if (!userCells.has(i)) {
+        cell.classList.add('solved');
+        // Stagger the animation for a wave effect
+        cell.style.animationDelay = (i * 12) + 'ms';
+      }
     }
-  } else{
-    document.getElementById("message").textContent = "🚨Este sudoku no se puede resolver🚨";
+    setMessage('✅ ¡Sudoku resuelto exitosamente!', 'success');
+  } else {
+    setMessage('🚨 Este Sudoku no se puede resolver', 'error');
     document.querySelectorAll(".cell").forEach(cell => cell.classList.add("alerta"));
+    // Shake the grid
+    const wrapper = document.querySelector('.grid-wrapper');
+    if (wrapper) {
+      wrapper.classList.add('shake');
+      wrapper.addEventListener('animationend', () => wrapper.classList.remove('shake'), { once: true });
+    }
   }
 }

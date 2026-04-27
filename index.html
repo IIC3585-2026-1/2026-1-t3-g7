@@ -1,105 +1,404 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="dark">
 <head>
     <meta charset="UTF-8">
-    <title>Sudoku</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sudoku Solver</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
+        /* ── Design Tokens ── */
+        :root {
+            --orange:        #f97316;
+            --orange-light:  #fb923c;
+            --orange-dark:   #ea580c;
+            --orange-glow:   rgba(249, 115, 22, 0.35);
+            --yellow:        #facc15;
+            --yellow-light:  #fde047;
+            --yellow-glow:   rgba(250, 204, 21, 0.25);
+            --danger:        #ef4444;
+            --danger-glow:   rgba(239, 68, 68, 0.25);
+            --success:       #22c55e;
+
+            --cell-size:     56px;
+            --radius-sm:     8px;
+            --radius-md:     14px;
+            --radius-lg:     20px;
+            --transition:    0.25s ease;
+        }
+
+        /* ── Dark theme (default) ── */
+        [data-theme="dark"] {
+            --bg-body:       #111111;
+            --bg-body-sub:   rgba(249, 115, 22, 0.06);
+            --bg-card:       rgba(30, 30, 30, 0.75);
+            --bg-cell:       #1a1a1a;
+            --bg-cell-hover: #2a2a2a;
+            --border-card:   rgba(255, 255, 255, 0.06);
+            --border-grid:   #555;
+            --border-block:  #888;
+            --border-cell:   #2e2e2e;
+            --text-primary:  #f5f5f5;
+            --text-secondary:#a3a3a3;
+            --text-user:     var(--orange-light);
+            --text-solved:   var(--yellow);
+            --btn-sec-bg:    #222;
+            --btn-sec-border:#3a3a3a;
+            --btn-sec-hover: #333;
+            --footer-opacity:0.4;
+            --toggle-icon:   "☀️";
+        }
+
+        /* ── Light theme ── */
+        [data-theme="light"] {
+            --bg-body:       #fafafa;
+            --bg-body-sub:   rgba(249, 115, 22, 0.04);
+            --bg-card:       rgba(255, 255, 255, 0.80);
+            --bg-cell:       #ffffff;
+            --bg-cell-hover: #f5f5f5;
+            --border-card:   rgba(0, 0, 0, 0.08);
+            --border-grid:   #bbb;
+            --border-block:  #555;
+            --border-cell:   #e5e5e5;
+            --text-primary:  #1a1a1a;
+            --text-secondary:#737373;
+            --text-user:     var(--orange-dark);
+            --text-solved:   #b45309;
+            --btn-sec-bg:    #f0f0f0;
+            --btn-sec-border:#ddd;
+            --btn-sec-hover: #e5e5e5;
+            --footer-opacity:0.5;
+            --toggle-icon:   "🌙";
+        }
+
+        /* ── Reset & base ── */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
         body {
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            margin: 0;
-            font-family: sans-serif;
-            background: #f0f0f0;
-            flex-direction: column;
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg-body);
+            background-image:
+                radial-gradient(ellipse 70% 50% at 50% -10%, var(--bg-body-sub), transparent),
+                radial-gradient(ellipse 50% 40% at 80% 100%, rgba(250, 204, 21, 0.04), transparent);
+            color: var(--text-primary);
+            padding: 24px;
+            transition: background var(--transition), color var(--transition);
         }
+
+        /* ── Theme toggle ── */
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: 1px solid var(--border-cell);
+            background: var(--bg-card);
+            backdrop-filter: blur(8px);
+            cursor: pointer;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background var(--transition), transform 0.15s ease, box-shadow var(--transition);
+            z-index: 10;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+        }
+        .theme-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 20px var(--orange-glow);
+        }
+        .theme-toggle:active { transform: scale(0.95); }
+
+        /* ── Header ── */
+        .header {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+
+        .header__icon {
+            font-size: 44px;
+            margin-bottom: 6px;
+            filter: drop-shadow(0 0 10px var(--orange-glow));
+        }
+
+        .header__title {
+            font-size: 2.2rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, var(--orange), var(--yellow));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header__subtitle {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            margin-top: 6px;
+            font-weight: 400;
+        }
+
+        .header__hint {
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            opacity: 0.7;
+            margin-top: 4px;
+        }
+
+        /* ── Message area ── */
+        #message {
+            min-height: 28px;
+            margin-bottom: 14px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            text-align: center;
+            transition: color var(--transition), opacity var(--transition);
+        }
+        #message:empty { opacity: 0; }
+        #message.error   { color: var(--danger); }
+        #message.success { color: var(--success); }
+
+        /* ── Grid wrapper (glassmorphism card) ── */
+        .grid-wrapper {
+            background: var(--bg-card);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-card);
+            border-radius: var(--radius-lg);
+            padding: 18px;
+            box-shadow:
+                0 8px 32px rgba(0,0,0,0.25),
+                inset 0 1px 0 rgba(255,255,255,0.04);
+            transition: background var(--transition), border var(--transition);
+        }
+
+        /* ── Sudoku grid ── */
         .grid {
             display: grid;
-            grid-template-columns: repeat(9, 50px);
-            grid-template-rows: repeat(9, 50px);
-            border: 3px solid #000;
-            background: #000;
+            grid-template-columns: repeat(9, var(--cell-size));
+            grid-template-rows:    repeat(9, var(--cell-size));
+            gap: 0;
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            border: 2px solid var(--border-block);
         }
+
+        /* ── Cell ── */
         .cell {
-            background: #fff;
+            background: var(--bg-cell);
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 20px;
+            font-size: 1.25rem;
+            font-weight: 600;
             cursor: pointer;
-            border: 1px solid #bbb;
+            border: 1px solid var(--border-cell);
             user-select: none;
-            color: #555;
+            color: var(--text-secondary);
+            transition:
+                background var(--transition),
+                color var(--transition),
+                transform 0.12s ease,
+                box-shadow var(--transition);
+            position: relative;
         }
+
         .cell:hover {
-            background: #e8f0ff;
-        }
-        .cell.alerta{
-            background: #ffcccb;
-        }
-        .cell.right-block {
-            border-right: 3px solid #000;
-        }
-        .cell.bottom-block {
-            border-bottom: 3px solid #000;
+            background: var(--bg-cell-hover);
+            z-index: 1;
         }
 
+        .cell:active {
+            transform: scale(0.9);
+        }
+
+        /* Thick borders for 3×3 blocks */
+        .cell.right-block  { border-right:  2px solid var(--border-block); }
+        .cell.bottom-block { border-bottom: 2px solid var(--border-block); }
+
+        /* User-entered number */
+        .cell.user-input {
+            color: var(--text-user);
+            font-weight: 700;
+            text-shadow: 0 0 6px var(--orange-glow);
+        }
+
+        /* Solved cell (filled by algorithm) */
+        .cell.solved {
+            color: var(--text-solved);
+            animation: fadeInCell 0.4s ease both;
+        }
+
+        /* Error state – all cells */
+        .cell.alerta {
+            background: rgba(239, 68, 68, 0.12) !important;
+            color: var(--danger) !important;
+            text-shadow: 0 0 6px var(--danger-glow);
+        }
+
+        /* Specific conflicting cells */
+        .cell.conflict {
+            background: rgba(239, 68, 68, 0.22) !important;
+            color: var(--danger) !important;
+            text-shadow: 0 0 10px var(--danger-glow);
+            animation: pulse-conflict 0.8s ease infinite;
+        }
+
+        /* ── Buttons ── */
         .buttons {
-            margin: 20px;
+            display: flex;
+            gap: 14px;
+            margin-top: 28px;
         }
 
-        button {
-            height: 60px;
-            width: 150px;
-            font-size: 30px;
-            margin: 10px;
-            border-radius: 10px;
-            background-color: #fff;
-            box-shadow: 0px 4px 10px #000;
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            height: 50px;
+            padding: 0 30px;
+            font-family: inherit;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition:
+                background var(--transition),
+                box-shadow var(--transition),
+                transform 0.12s ease;
         }
-        button:hover{
-            background-color: #e8f0ff;
+        .btn:active { transform: scale(0.95); }
+
+        .btn--primary {
+            background: linear-gradient(135deg, var(--orange), var(--orange-dark));
+            color: #fff;
+            box-shadow: 0 4px 18px var(--orange-glow);
+        }
+        .btn--primary:hover {
+            background: linear-gradient(135deg, var(--orange-light), var(--orange));
+            box-shadow: 0 6px 28px rgba(249, 115, 22, 0.45);
         }
 
-        #title{
-            font-size: xx-large;
-            font-weight: bolder;
-            margin-bottom: 20px;
+        .btn--secondary {
+            background: var(--btn-sec-bg);
+            color: var(--text-secondary);
+            border: 1px solid var(--btn-sec-border);
+        }
+        .btn--secondary:hover {
+            background: var(--btn-sec-hover);
+            color: var(--text-primary);
         }
 
-        #subtitle{
-            font-size:large;
-            font-weight: bold;
-            margin-bottom: 5px;
+        /* ── Footer ── */
+        .footer {
+            margin-top: 26px;
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            opacity: var(--footer-opacity);
         }
 
-        #subsubtitle{
-            font-size: medium;
-            margin-bottom: 20px;
+        /* ── Animations ── */
+        @keyframes fadeInCell {
+            from { opacity: 0; transform: scale(0.55); }
+            to   { opacity: 1; transform: scale(1); }
         }
 
-        #message{
-            min-height: 22px;
-            margin-bottom: 10px;
-            font-weight: bolder;
+        @keyframes pulse-conflict {
+            0%, 100% { box-shadow: inset 0 0 0 0 transparent; }
+            50%      { box-shadow: inset 0 0 14px var(--danger-glow); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            15%      { transform: translateX(-6px); }
+            30%      { transform: translateX(5px); }
+            45%      { transform: translateX(-4px); }
+            60%      { transform: translateX(3px); }
+            75%      { transform: translateX(-2px); }
+        }
+
+        .shake {
+            animation: shake 0.45s ease;
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 580px) {
+            :root { --cell-size: 38px; }
+            .header__title { font-size: 1.6rem; }
+            .cell { font-size: 1rem; }
+            .btn { height: 44px; padding: 0 20px; font-size: 0.9rem; }
+            .grid-wrapper { padding: 12px; }
+            .theme-toggle { top: 12px; right: 12px; width: 40px; height: 40px; font-size: 1.1rem; }
         }
     </style>
 </head>
 <body>
-    <div id="title">Sudoku Solver</div>
-    <div id="subtitle">¿Problemas resolviendo tu Sudoku?</div>
-    <div id="subsubtitle">¡Copia tu sudoku acá, tocando las casillas, y te daremos la solución!</div>
+
+    <!-- Theme toggle button -->
+    <button class="theme-toggle" id="themeToggle" aria-label="Cambiar tema" onclick="toggleTheme()">
+        🌙
+    </button>
+
+    <div class="header">
+        <div class="header__icon">🧩</div>
+        <h1 class="header__title">Sudoku Solver</h1>
+        <p class="header__subtitle">¿Problemas resolviendo tu Sudoku?</p>
+        <p class="header__hint">Haz clic en las casillas para ingresar números (1–9)</p>
+    </div>
+
     <div id="message"></div>
-    <div class="grid" id="grid"></div>
+
+    <div class="grid-wrapper" id="gridWrapper">
+        <div class="grid" id="grid"></div>
+    </div>
+
     <div class="buttons">
-        <button onclick="solveGrid()">
-            Resolver
+        <button class="btn btn--primary" id="btnSolve" onclick="solveGrid()">
+            <span>✨</span> Resolver
         </button>
-        <button onclick="clearGrid()">
-            Limpiar
+        <button class="btn btn--secondary" id="btnClear" onclick="clearGrid()">
+            <span>🗑️</span> Limpiar
         </button>
     </div>
+
+    <div class="footer">Powered by WebAssembly &bull; Backtracking + MRV</div>
+
+    <!-- Theme toggle logic (before other scripts so it applies early) -->
+    <script>
+        // Apply saved theme preference immediately to avoid flash
+        (function() {
+            const saved = localStorage.getItem('sudoku-theme');
+            if (saved) {
+                document.documentElement.setAttribute('data-theme', saved);
+            }
+        })();
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            const current = html.getAttribute('data-theme');
+            const next = current === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', next);
+            localStorage.setItem('sudoku-theme', next);
+            document.getElementById('themeToggle').textContent = next === 'dark' ? '☀️' : '🌙';
+        }
+
+        // Set initial icon
+        document.addEventListener('DOMContentLoaded', () => {
+            const theme = document.documentElement.getAttribute('data-theme');
+            document.getElementById('themeToggle').textContent = theme === 'dark' ? '☀️' : '🌙';
+        });
+    </script>
+
     <script src="sodoku_solver.js"></script>
     <script>
         const grid = document.getElementById('grid');
