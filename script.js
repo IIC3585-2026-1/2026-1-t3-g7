@@ -7,7 +7,13 @@ window.onload = () => {
   cleanGrid = Module.cwrap('clean_grid', null, []);
 };
 
+function clearAlerta(){
+  document.querySelectorAll(".cell").forEach(cell => cell.classList.remove("alerta"));
+}
+
 window.pressBlock = function(i){
+    clearAlerta();
+    document.getElementById("message").textContent = "";
     const id = 'cell' + String(i);
     const cell = document.getElementById(id);
     var content = cell.textContent;
@@ -36,6 +42,7 @@ window.clearGrid = function(){
     document.getElementById(id).textContent = '';
   }
   document.getElementById("message").textContent = "";
+  clearAlerta();
 }
 
 window.solveGrid = function(){
@@ -47,6 +54,7 @@ window.solveGrid = function(){
       document.getElementById(id).textContent = String(getCell(i));
     }
   } else{
-    document.getElementById("message").textContent = "No se puede resolver";
+    document.getElementById("message").textContent = "🚨Este sudoku no se puede resolver🚨";
+    document.querySelectorAll(".cell").forEach(cell => cell.classList.add("alerta"));
   }
 }

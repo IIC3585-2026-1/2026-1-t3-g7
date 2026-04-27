@@ -35,6 +35,9 @@
         .cell:hover {
             background: #e8f0ff;
         }
+        .cell.alerta{
+            background: #ffcccb;
+        }
         .cell.right-block {
             border-right: 3px solid #000;
         }
@@ -43,18 +46,50 @@
         }
 
         .buttons {
-            margin: 20px
+            margin: 20px;
         }
 
         button {
             height: 60px;
             width: 150px;
             font-size: 30px;
-            margin: 10px
+            margin: 10px;
+            border-radius: 10px;
+            background-color: #fff;
+            box-shadow: 0px 4px 10px #000;
+        }
+        button:hover{
+            background-color: #e8f0ff;
+        }
+
+        #title{
+            font-size: xx-large;
+            font-weight: bolder;
+            margin-bottom: 20px;
+        }
+
+        #subtitle{
+            font-size:large;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        #subsubtitle{
+            font-size: medium;
+            margin-bottom: 20px;
+        }
+
+        #message{
+            min-height: 22px;
+            margin-bottom: 10px;
+            font-weight: bolder;
         }
     </style>
 </head>
 <body>
+    <div id="title">Sudoku Solver</div>
+    <div id="subtitle">¿Problemas resolviendo tu Sudoku?</div>
+    <div id="subsubtitle">¡Copia tu sudoku acá, tocando las casillas, y te daremos la solución!</div>
     <div id="message"></div>
     <div class="grid" id="grid"></div>
     <div class="buttons">
